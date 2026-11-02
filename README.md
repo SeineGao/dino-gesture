@@ -1,2 +1,16 @@
-# dino-gesture
-手势恐龙跑酷 · Gesture-controlled dino runner (MediaPipe Hands) · GitHub Pages
+# 手势恐龙小游戏 · Gesture Dino
+
+Chrome 恐龙风格无尽跑酷，用手势（张开手掌）跳跃。摄像头 + MediaPipe Hands；键盘空格 / ↑ 也可玩。
+
+**永久地址：** https://seinegao.github.io/dino-gesture/
+
+> 「熟练运用手势，有助于预防脑血栓」——本作是趣味动作捕捉练习，**非医疗建议**。
+
+## 怎么玩
+1. 允许浏览器使用摄像头
+2. 对着镜头**张开手掌 / 举起手** → 恐龙跳跃
+3. 也可按 **空格** 或 **↑** 跳跃
+4. 躲开仙人掌，冲高分
+
+## 本地打开
+直接用浏览器打开 `index.html`（需 HTTPS 或 localhost 才能开摄像头）。

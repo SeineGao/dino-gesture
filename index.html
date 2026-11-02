@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>手势恐龙 · 预防脑血栓练习</title>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466862/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous"></script>
+<style>
+  :root {
+    --bg: #f7f3e8;
+    --ink: #2c2a24;
+    --muted: #7a7366;
+    --accent: #2a9d8f;
+    --warn: #e76f51;
+    --banner: #c1121f;
+    --card: #fffdf7;
+    --line: #e4dcc8;
+    --font: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: var(--font);
+    color: var(--ink);
+    background:
+      radial-gradient(900px 420px at 10% -10%, #ffe8a3 0%, transparent 55%),
+      radial-gradient(700px 380px at 100% 0%, #c8f0e8 0%, transparent 50%),
+      var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 12px 28px;
+    min-height: 100%;
+  }
+  .banner {
+    width: min(920px, 100%);
+    background: linear-gradient(90deg, #9b1c1c, #c1121f 40%, #e85d4c);
+    color: #fff;
+    text-align: center;
+    font-weight: 800;
+    font-size: clamp(16px, 4.2vw, 22px);
+    letter-spacing: 0.04em;
+    padding: 12px 14px;
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(193, 18, 31, 0.28);
+    margin-bottom: 8px;
+  }
+  .sub {
+    width: min(920px, 100%);
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0 0 12px;
+    line-height: 1.5;
+  }
+  h1 {
+    margin: 0 0 6px;
+    font-size: clamp(20px, 5vw, 28px);
+    font-weight: 800;
+  }
+  .wrap {
+    width: min(920px, 100%);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: 0 16px 40px rgba(60, 40, 10, 0.08);
+    padding: 12px;
+    position: relative;
+  }
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  .score { font-weight: 800; font-size: 18px; }
+  .status {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .status.ok { color: var(--accent); font-weight: 700; }
+  .status.warn { color: var(--warn); font-weight: 700; }
+  #game {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: #f4f1e6;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    touch-action: none;
+  }
+  #camBox {
+    position: absolute;
+    right: 20px;
+    top: 52px;
+    width: 140px;
+    max-width: 28vw;
+    background: #111;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #fff;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    z-index: 5;
+  }
+  #camBox video, #camBox canvas {
+    width: 100%;
+    display: block;
+    transform: scaleX(-1);
+  }
+  #overlayCam {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  .cam-label {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-size: 10px;
+    text-align: center;
+    padding: 2px 4px;
+  }
+  .btns {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    justify-content: center;
+  }
+  button {
+    font-family: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 22px;
+    font-size: 15px;
+    cursor: pointer;
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(42, 157, 143, 0.28);
+  }
+  button.secondary {
+    background: #fff;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    box-shadow: none;
+  }
+  button:active { transform: scale(0.98); }
+  .tips {
+    width: min(920px, 100%);
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .tips strong { color: var(--ink); }
+  .overlay {
+    position: absolute;
+    inset: 12px;
+    top: 52px;
+    border-radius: 12px;
+    background: rgba(44, 42, 36, 0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    z-index: 4;
+  }
+  .overlay.hidden { display: none; }
+  .overlay h2 { margin: 0 0 8px; font-size: 28px; }
+  .overlay p { margin: 0 0 16px; opacity: 0.9; }
+  @media (max-width: 560px) {
+    #camBox { width: 110px; top: 48px; right: 16px; }
+    .banner { font-size: 15px; padding: 10px; }
+  }
+</style>
+</head>
+<body>
+  <div class="banner">熟练运用手势，有助于预防脑血栓</div>
+  <p class="sub">手势动作捕捉练习小游戏 · 趣味运动提示，非医疗建议 · Gesture motion-capture exercise, not medical advice</p>
+  <h1>🦕 手势恐龙跑酷</h1>
+
+  <div class="wrap" id="wrap">
+    <div class="hud">
+      <div class="score">得分：<span id="score">0</span></div>
+      <div class="status" id="camStatus">正在请求摄像头…</div>
+    </div>
+    <canvas id="game" width="800" height="240"></canvas>
+    <div id="camBox">
+      <video id="video" playsinline autoplay muted></video>
+      <canvas id="overlayCam"></canvas>
+      <div class="cam-label">张开手掌 = 跳</div>
+    </div>
+    <div class="overlay" id="startOverlay">
+      <h2>准备好了吗？</h2>
+      <p>张开手掌跳跃 · 也可按空格 / ↑</p>
+      <button id="btnStart" type="button">开始</button>
+    </div>
+    <div class="overlay hidden" id="overOverlay">
+      <h2>游戏结束</h2>
+      <p>得分：<span id="finalScore">0</span></p>
+      <button id="btnRestart" type="button">再来一次</button>
+    </div>
+    <div class="btns">
+      <button id="btnJump" class="secondary" type="button">点我跳跃</button>
+      <button id="btnCam" class="secondary" type="button">重开摄像头</button>
+    </div>
+  </div>
+
+  <div class="tips">
+    <strong>怎么玩：</strong>对着右上角摄像头<strong>张开手掌 / 举起手</strong>触发跳跃（松手后再张开可连续跳）。键盘 <strong>空格</strong> 或 <strong>↑</strong> 同样有效。若拒绝摄像头权限，仍可用键盘或「点我跳跃」按钮游玩。<br/>
+    页面横幅「熟练运用手势，有助于预防脑血栓」仅为趣味健康提示，请勿当作医疗诊断或治疗依据。
+  </div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('score');
+  const finalScoreEl = document.getElementById('finalScore');
+  const camStatus = document.getElementById('camStatus');
+  const startOverlay = document.getElementById('startOverlay');
+  const overOverlay = document.getElementById('overOverlay');
+  const video = document.getElementById('video');
+  const overlayCam = document.getElementById('overlayCam');
+  const octx = overlayCam.getContext('2d');
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const GROUND_Y = H - 28;
+
+  let running = false;
+  let gameOver = false;
+  let score = 0;
+  let speed = 6;
+  let frame = 0;
+  let obstacles = [];
+  let clouds = [];
+  let jumpLatch = false; // edge-trigger for gesture
+  let lastJumpAt = 0;
+
+  const dino = {
+    x: 56,
+    y: GROUND_Y,
+    vy: 0,
+    w: 44,
+    h: 48,
+    onGround: true,
+    blink: 0
+  };
+
+  function resetGame() {
+    running = true;
+    gameOver = false;
+    score = 0;
+    speed = 6;
+    frame = 0;
+    obstacles = [];
+    clouds = [
+      { x: 120, y: 40, s: 1 },
+      { x: 420, y: 28, s: 0.7 },
+      { x: 680, y: 50, s: 1.2 }
+    ];
+    dino.y = GROUND_Y;
+    dino.vy = 0;
+    dino.onGround = true;
+    scoreEl.textContent = '0';
+    startOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+  }
+
+  function jump() {
+    if (!running || gameOver) return;
+    if (dino.onGround) {
+      dino.vy = -11.2;
+      dino.onGround = false;
+      lastJumpAt = performance.now();
+    }
+  }
+
+  function spawnObstacle() {
+    const kind = Math.random() < 0.7 ? 'cactus' : 'cactus2';
+    const h = kind === 'cactus' ? 34 + Math.random() * 16 : 28;
+    const w = kind === 'cactus' ? 18 : 34;
+    obstacles.push({ x: W + 10, y: GROUND_Y, w, h, kind });
+  }
+
+  function update() {
+    if (!running || gameOver) return;
+    frame++;
+    score = Math.floor(frame / 5);
+    scoreEl.textContent = String(score);
+    if (frame % 400 === 0) speed = Math.min(14, speed + 0.45);
+
+    // dino physics
+    dino.vy += 0.55;
+    dino.y += dino.vy;
+    if (dino.y >= GROUND_Y) {
+      dino.y = GROUND_Y;
+      dino.vy = 0;
+      dino.onGround = true;
+    }
+
+    // clouds
+    for (const c of clouds) {
+      c.x -= 0.4 * c.s;
+      if (c.x < -60) c.x = W + Math.random() * 100;
+    }
+
+    // obstacles
+    if (obstacles.length === 0 || obstacles[obstacles.length - 1].x < W - (180 + Math.random() * 220)) {
+      if (Math.random() < 0.04 + speed * 0.002) spawnObstacle();
+    }
+    for (const o of obstacles) o.x -= speed;
+    obstacles = obstacles.filter(o => o.x + o.w > -20);
+
+    // collision
+    const pad = 6;
+    const dx = dino.x + pad;
+    const dy = dino.y - dino.h + pad;
+    const dw = dino.w - pad * 2;
+    const dh = dino.h - pad * 2;
+    for (const o of obstacles) {
+      const ox = o.x + 2;
+      const oy = o.y - o.h + 2;
+      const ow = o.w - 4;
+      const oh = o.h - 4;
+      if (dx < ox + ow && dx + dw > ox && dy < oy + oh && dy + dh > oy) {
+        endGame();
+        break;
+      }
+    }
+  }
+
+  function endGame() {
+    gameOver = true;
+    running = false;
+    finalScoreEl.textContent = String(score);
+    overOverlay.classList.remove('hidden');
+  }
+
+  function drawGround() {
+    ctx.strokeStyle = '#5c5346';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y + 1);
+    ctx.lineTo(W, GROUND_Y + 1);
+    ctx.stroke();
+    ctx.fillStyle = '#d9d0b8';
+    for (let i = 0; i < 20; i++) {
+      const gx = ((i * 48 - (frame * speed * 0.5) % 48) + 48) % (W + 48) - 20;
+      ctx.fillRect(gx, GROUND_Y + 6, 18, 2);
+    }
+  }
+
+  function drawCloud(c) {
+    ctx.fillStyle = '#e8e2d2';
+    const x = c.x, y = c.y, s = 16 * c.s;
+    ctx.beginPath();
+    ctx.arc(x, y, s * 0.55, 0, Math.PI * 2);
+    ctx.arc(x + s * 0.6, y - 4, s * 0.7, 0, Math.PI * 2);
+    ctx.arc(x + s * 1.2, y, s * 0.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawCactus(o) {
+    ctx.fillStyle = '#2a9d8f';
+    const x = o.x, top = o.y - o.h;
+    if (o.kind === 'cactus') {
+      ctx.fillRect(x + o.w * 0.35, top, o.w * 0.3, o.h);
+      ctx.fillRect(x, top + o.h * 0.35, o.w * 0.35, o.w * 0.28);
+      ctx.fillRect(x, top + o.h * 0.35, o.w * 0.22, o.h * 0.28);
+      ctx.fillRect(x + o.w * 0.65, top + o.h * 0.22, o.w * 0.35, o.w * 0.28);
+      ctx.fillRect(x + o.w * 0.78, top + o.h * 0.22, o.w * 0.22, o.h * 0.35);
+    } else {
+      // twin
+      ctx.fillRect(x + 4, top + 6, 8, o.h - 6);
+      ctx.fillRect(x + 20, top, 8, o.h);
+      ctx.fillRect(x, top + 14, 12, 6);
+      ctx.fillRect(x + 28, top + 10, 10, 6);
+    }
+  }
+
+  function drawDino() {
+    const x = dino.x;
+    const y = dino.y - dino.h;
+    const run = dino.onGround && running && !gameOver;
+    const leg = run ? Math.floor(frame / 4) % 2 : 0;
+
+    // body
+    ctx.fillStyle = '#535353';
+    ctx.fillRect(x + 16, y + 12, 22, 22);
+    // head
+    ctx.fillRect(x + 28, y, 16, 16);
+    ctx.fillRect(x + 30, y + 4, 14, 4); // mouth line area
+    // eye
+    ctx.fillStyle = '#f7f3e8';
+    ctx.fillRect(x + 36, y + 4, 4, 4);
+    ctx.fillStyle = '#535353';
+    // tail
+    ctx.fillRect(x, y + 18, 16, 8);
+    ctx.fillRect(x + 2, y + 12, 8, 8);
+    // arm
+    ctx.fillRect(x + 20, y + 22, 8, 4);
+    // legs
+    if (leg === 0) {
+      ctx.fillRect(x + 18, y + 34, 8, 14);
+      ctx.fillRect(x + 30, y + 34, 8, 10);
+    } else {
+      ctx.fillRect(x + 18, y + 34, 8, 10);
+      ctx.fillRect(x + 30, y + 34, 8, 14);
+    }
+    // cute blush when airborne tip
+    if (!dino.onGround) {
+      ctx.fillStyle = 'rgba(231, 111, 81, 0.35)';
+      ctx.fillRect(x + 30, y + 10, 6, 3);
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    // sky tint
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#f7f3e8');
+    g.addColorStop(1, '#ebe4d2');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    for (const c of clouds) drawCloud(c);
+    drawGround();
+    for (const o of obstacles) drawCactus(o);
+    drawDino();
+
+    if (!running && !gameOver) {
+      ctx.fillStyle = 'rgba(44,42,36,0.08)';
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // Controls
+  document.getElementById('btnStart').addEventListener('click', () => resetGame());
+  document.getElementById('btnRestart').addEventListener('click', () => resetGame());
+  document.getElementById('btnJump').addEventListener('click', () => {
+    if (!running && !gameOver) resetGame();
+    jump();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+      e.preventDefault();
+      if (!running && !gameOver) resetGame();
+      else if (gameOver) resetGame();
+      else jump();
+    }
+  });
+  canvas.addEventListener('pointerdown', () => {
+    if (!running && !gameOver) resetGame();
+    else if (gameOver) resetGame();
+    else jump();
+  });
+
+  // —— MediaPipe Hands: open palm / raised fingers => JUMP ——
+  function isOpenPalm(landmarks) {
+    // landmarks: 21 points. Tips: 8,12,16,20 ; PIP: 6,10,14,18 ; wrist: 0
+    // Open palm: fingertips clearly above (smaller y) their PIP joints, and above wrist.
+    const tips = [8, 12, 16, 20];
+    const pips = [6, 10, 14, 18];
+    const wrist = landmarks[0];
+    let extended = 0;
+    for (let i = 0; i < tips.length; i++) {
+      const tip = landmarks[tips[i]];
+      const pip = landmarks[pips[i]];
+      if (tip.y < pip.y - 0.02 && tip.y < wrist.y) extended++;
+    }
+    // thumb rough: tip 4 farther from palm than IP 3 in x
+    const thumbOk = Math.abs(landmarks[4].x - landmarks[2].x) > 0.04;
+    return extended >= 3 && thumbOk;
+  }
+
+  function onGesture(open) {
+    if (open && !jumpLatch) {
+      jumpLatch = true;
+      if (!running && !gameOver) {
+        // wait for start button — still allow jump after start
+      } else {
+        jump();
+      }
+      // also allow starting with gesture when overlay visible
+      if (!running && !gameOver) {
+        // ignore auto-start to avoid accidental start; user clicks 开始
+      } else if (gameOver) {
+        // don't auto-restart on gesture to avoid surprise
+      }
+    } else if (!open) {
+      jumpLatch = false;
+    }
+  }
+
+  let hands = null;
+  let camera = null;
+
+  function setCamStatus(text, cls) {
+    camStatus.textContent = text;
+    camStatus.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  async function startCamera() {
+    setCamStatus('正在启动摄像头…');
+    try {
+      if (typeof Hands === 'undefined') {
+        setCamStatus('手势库加载失败 · 请用键盘玩', 'warn');
+        return;
+      }
+      hands = new Hands({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}`
+      });
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 0,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.5
+      });
+      hands.onResults((results) => {
+        overlayCam.width = video.videoWidth || 160;
+        overlayCam.height = video.videoHeight || 120;
+        octx.save();
+        octx.clearRect(0, 0, overlayCam.width, overlayCam.height);
+        octx.drawImage(results.image, 0, 0, overlayCam.width, overlayCam.height);
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length) {
+          const lm = results.multiHandLandmarks[0];
+          if (typeof drawConnectors === 'function' && typeof HAND_CONNECTIONS !== 'undefined') {
+            drawConnectors(octx, lm, HAND_CONNECTIONS, { color: '#2a9d8f', lineWidth: 2 });
+            drawLandmarks(octx, lm, { color: '#e76f51', lineWidth: 1, radius: 2 });
+          }
+          const open = isOpenPalm(lm);
+          onGesture(open);
+          setCamStatus(open ? '手势：张开手掌 ✓ 跳跃' : '手势：检测到手 · 张开手掌跳跃', open ? 'ok' : 'ok');
+        } else {
+          onGesture(false);
+          setCamStatus('摄像头已开 · 举起并张开手掌跳跃', 'ok');
+        }
+        octx.restore();
+      });
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+
+      camera = new Camera(video, {
+        onFrame: async () => {
+          if (hands) await hands.send({ image: video });
+        },
+        width: 320,
+        height: 240
+      });
+      camera.start();
+      setCamStatus('摄像头已开 · 张开手掌跳跃', 'ok');
+    } catch (err) {
+      console.warn(err);
+      setCamStatus('未授权摄像头 · 可用空格 / ↑ / 按钮玩', 'warn');
+      document.getElementById('camBox').style.opacity = '0.45';
+    }
+  }
+
+  document.getElementById('btnCam').addEventListener('click', () => {
+    document.getElementById('camBox').style.opacity = '1';
+    startCamera();
+  });
+
+  // boot camera after a tick so UI paints
+  setTimeout(startCamera, 300);
+})();
+</script>
+</body>
+</html>
