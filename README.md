@@ -1,16 +1,7 @@
-# 手势恐龙小游戏 · Gesture Dino
+# 拇指恐龙 · Thumb Dino
 
-Chrome 恐龙风格无尽跑酷，用手势（张开手掌）跳跃。摄像头 + MediaPipe Hands；键盘空格 / ↑ 也可玩。
+手势控制的恐龙跑酷：拇指上跳、拇指下蹲，张开手掌刹车，剪刀手冲刺。兑换码 `THUMBDINO` 可一次解锁全部装扮。
 
-**永久地址：** https://seinegao.github.io/dino-gesture/
+**永久试玩：** https://seinegao.github.io/ai-rate-checker/dino-gesture/
 
-> 「熟练运用手势，有助于预防脑血栓」——本作是趣味动作捕捉练习，**非医疗建议**。
-
-## 怎么玩
-1. 允许浏览器使用摄像头
-2. 对着镜头**张开手掌 / 举起手** → 恐龙跳跃
-3. 也可按 **空格** 或 **↑** 跳跃
-4. 躲开仙人掌，冲高分
-
-## 本地打开
-直接用浏览器打开 `index.html`（需 HTTPS 或 localhost 才能开摄像头）。
+（仓库本身的 Pages 地址是 https://seinegao.github.io/dino-gesture/ ，需在仓库 Settings → Pages 里开通后才会生效。）
